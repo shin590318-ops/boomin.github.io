@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>進撃のアンダーヘア：世界を救う防衛ミッション</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'DotGothic16', monospace, sans-serif;
+            background-color: #0d0f12;
+            color: #33ff66;
+            overflow-x: hidden;
+        }
+
+        /* CRT Filter Effect */
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 50;
+            background-size: 100% 3px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .crt::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: rgba(18, 16, 16, 0.1);
+            opacity: 0;
+            z-index: 50;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.18; }
+            50% { opacity: 0.25; }
+            100% { opacity: 0.2; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #059669;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #10b981;
+        }
+
+        /* Glowing text effects */
+        .text-glow {
+            text-shadow: 0 0 8px rgba(51, 255, 102, 0.6);
+        }
+        .text-glow-red {
+            text-shadow: 0 0 8px rgba(255, 51, 51, 0.8);
+        }
+        .text-glow-gold {
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+        }
+
+        /* Custom Retro Box border */
+        .retro-border {
+            border: 3px solid #33ff66;
+            box-shadow: 0 0 10px rgba(51, 255, 102, 0.3), inset 0 0 10px rgba(51, 255, 102, 0.2);
+        }
+        .retro-border-red {
+            border: 3px solid #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4), inset 0 0 10px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Retro Button Hover */
+        .retro-btn {
+            transition: all 0.15s ease;
+            position: relative;
+        }
+        .retro-btn:hover {
+            background-color: #33ff66;
+            color: #000000;
+            box-shadow: 0 0 12px rgba(51, 255, 102, 0.8);
+            transform: translateY(-2px);
+        }
+        .retro-btn:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-green-400 min-h-screen flex flex-col justify-between p-2 md:p-4 crt" id="game-body">
+
+    <!-- Top Bar / Header -->
+    <header class="w-full max-w-5xl mx-auto mb-3 border-b-2 border-green-500 pb-2 flex flex-wrap justify-between items-center gap-2">
+        <div class="flex items-center space-x-2">
+            <span class="text-xl md:text-2xl font-bold tracking-wider text-glow">【進撃のアンダーヘア】</span>
+            <span class="text-xs text-green-300 border border-green-500 px-2 py-0.5 rounded">v1.0.0</span>
+        </div>
+        <div class="flex items-center space-x-4 text-xs md:text-sm">
+            <button id="sfx-toggle" onclick="toggleSFX()" class="border border-green-500 px-2 py-1 rounded hover:bg-green-900 transition">
+                🔊 SOUND: <span id="sfx-status">ON</span>
+            </button>
+            <button id="crt-toggle" onclick="toggleCRT()" class="border border-green-500 px-2 py-1 rounded hover:bg-green-900 transition">
+                📺 CRT: ON
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="w-full max-w-5xl mx-auto flex-grow flex flex-col gap-4">
+
+        <!-- Status & Meter Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-gray-900 p-3 rounded-lg retro-border">
+            <!-- Scalp HP -->
+            <div class="flex flex-col">
+                <div class="flex justify-between text-xs font-bold mb-1">
+                    <span>頭皮HP (ブツブツ度):</span>
+                    <span id="scalp-hp-val" class="text-green-300">100 / 100</span>
+                </div>
+                <div class="w-full bg-gray-800 h-4 rounded overflow-hidden border border-gray-700">
+                    <div id="scalp-hp-bar" class="bg-green-500 h-full transition-all duration-500 w-full"></div>
+                </div>
+            </div>
+
+            <!-- World Safety -->
+            <div class="flex flex-col">
+                <div class="flex justify-between text-xs font-bold mb-1">
+                    <span>世界の平和度:</span>
+                    <span id="world-peace-val" class="text-blue-300">100%</span>
+                </div>
+                <div class="w-full bg-gray-800 h-4 rounded overflow-hidden border border-gray-700">
+                    <div id="world-peace-bar" class="bg-blue-500 h-full transition-all duration-500 w-full"></div>
+                </div>
+            </div>
+
+            <!-- Hair Length -->
+            <div class="flex flex-col justify-center bg-gray-950 p-2 rounded border border-green-800">
+                <div class="flex justify-between text-xs">
+                    <span class="text-gray-400">現在の毛の長さ:</span>
+                    <span id="hair-length-val" class="text-yellow-400 font-bold text-sm">3.00 m (スパイラル)</span>
+                </div>
+                <div class="flex justify-between text-xs mt-1">
+                    <span class="text-gray-400">所持アイテム:</span>
+                    <span id="inventory-val" class="text-yellow-300 truncate">なし</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Canvas Display Area -->
+        <div class="relative w-full h-48 sm:h-64 md:h-72 bg-black rounded-lg retro-border overflow-hidden flex items-center justify-center">
+            <canvas id="game-canvas" class="w-full h-full object-contain"></canvas>
+            <!-- Badge / Scene Tag -->
+            <div id="scene-tag" class="absolute top-2 left-2 bg-green-950/80 border border-green-500 text-green-300 text-xs px-2 py-1 rounded">
+                LOCATION: 自宅の部屋
+            </div>
+        </div>
+
+        <!-- Dialogue & Narrative Display Box -->
+        <div class="bg-gray-900/90 rounded-lg p-4 retro-border flex-grow flex flex-col justify-between min-h-[160px]">
+            <!-- Narrative Text Area -->
+            <div id="dialogue-box" class="text-base sm:text-lg leading-relaxed text-green-300 min-h-[90px] whitespace-pre-line">
+                <!-- Text typed dynamically -->
+            </div>
+
+            <!-- Action Prompt indicator -->
+            <div id="typing-indicator" class="text-right text-xs text-green-500 animate-pulse hidden">
+                ▶ 指示を選択してください...
+            </div>
+        </div>
+
+        <!-- Choice Controls Panel -->
+        <div id="choices-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pb-2">
+            <!-- Choice buttons injected via JS -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-5xl mx-auto mt-2 text-center text-xs text-gray-500 border-t border-gray-800 pt-2">
+        <span>© 2026 UNSTOPPABLE UNDERHAIR DEFENSE FORCE | Inspired by absolute absurdity</span>
+    </footer>
+
+    <!-- Game Logic Scripts -->
+    <script>
+        // Game State Variables
+        const state = {
+            scalpHP: 100,
+            maxScalpHP: 100,
+            worldPeace: 100,
+            hairLength: 3.0, // in meters
+            inventory: [],
+            currentScene: 'start',
+            sfxEnabled: true,
+            crtEnabled: true,
+            isTyping: false,
+            typingTimer: null
+        };
+
+        // Web Audio Synth for Retro Sound Effects
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            if (!state.sfxEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+
+                if (type === 'blip') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.04);
+                    gain.gain.setValueAtTime(0.03, now);
+                    gain.gain.linearRampToValueAtTime(0.0, now + 0.04);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.04);
+                } else if (type === 'select') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.0, now + 0.2);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'cut') {
+                    // Snip sound
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(1200, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.linearRampToValueAtTime(0.0, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'burn') {
+                    // Fire sound noise simulation
+                    const bufferSize = ctx.sampleRate * 0.3;
+                    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                    const output = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+                    const whiteNoise = ctx.createBufferSource();
+                    whiteNoise.buffer = buffer;
+
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(800, now);
+                    filter.Q.setValueAtTime(1.0, now);
+
+                    const gain = ctx.createGain();
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                    whiteNoise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    whiteNoise.start(now);
+                } else if (type === 'damage') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(60, now + 0.2);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.0, now + 0.2);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'fanfare') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                        gain.gain.setValueAtTime(0.08, now + idx * 0.1);
+                        gain.gain.linearRampToValueAtTime(0.0, now + idx * 0.1 + 0.25);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.1);
+                        osc.stop(now + idx * 0.1 + 0.25);
+                    });
+                } else if (type === 'gameover') {
+                    const notes = [400, 350, 300, 200];
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+                        gain.gain.setValueAtTime(0.1, now + idx * 0.15);
+                        gain.gain.linearRampToValueAtTime(0.0, now + idx * 0.15 + 0.3);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.15);
+                        osc.stop(now + idx * 0.15 + 0.3);
+                    });
+                }
+            } catch(e) {
+                console.log("Audio play error:", e);
+            }
+        }
+
+        function toggleSFX() {
+            state.sfxEnabled = !state.sfxEnabled;
+            document.getElementById('sfx-status').innerText = state.sfxEnabled ? 'ON' : 'OFF';
+            if (state.sfxEnabled) playSound('select');
+        }
+
+        function toggleCRT() {
+            const body = document.getElementById('game-body');
+            const btn = document.getElementById('crt-toggle');
+            state.crtEnabled = !state.crtEnabled;
+            if (state.crtEnabled) {
+                body.classList.add('crt');
+                btn.innerText = '📺 CRT: ON';
+            } else {
+                body.classList.remove('crt');
+                btn.innerText = '📺 CRT: OFF';
+            }
+        }
+
+        // Canvas Drawing Engine for Pixel Visuals
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            drawVisual(state.currentScene);
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawVisual(sceneId) {
+            const w = canvas.width;
+            const h = canvas.height;
+            if (!w || !h) return;
+
+            // Clear Background
+            ctx.fillStyle = '#06090e';
+            ctx.fillRect(0, 0, w, h);
+
+            // Draw Grid lines
+            ctx.strokeStyle = 'rgba(51, 255, 102, 0.08)';
+            ctx.lineWidth = 1;
+            const gridSize = 20;
+            for (let x = 0; x < w; x += gridSize) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+            }
+            for (let y = 0; y < h; y += gridSize) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+            }
+
+            const centerX = w / 2;
+            const centerY = h / 2;
+
+            if (sceneId === 'start' || sceneId === 'wig_crafted') {
+                // Character with 3m Spiraling Hair
+                // Body stick figure / retro style
+                ctx.strokeStyle = '#33ff66';
+                ctx.lineWidth = 4;
+                
+                // Head
+                ctx.beginPath();
+                ctx.arc(centerX, centerY - 30, 20, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Eyes
+                ctx.fillStyle = '#33ff66';
+                ctx.fillRect(centerX - 8, centerY - 35, 4, 4);
+                ctx.fillRect(centerX + 4, centerY - 35, 4, 4);
+
+                // Body
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - 10);
+                ctx.lineTo(centerX, centerY + 40);
+                ctx.stroke();
+
+                // Arms
+                ctx.beginPath();
+                ctx.moveTo(centerX - 30, centerY + 10);
+                ctx.lineTo(centerX + 30, centerY + 10);
+                ctx.stroke();
+
+                // Legs
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY + 40);
+                ctx.lineTo(centerX - 20, centerY + 80);
+                ctx.moveTo(centerX, centerY + 40);
+                ctx.lineTo(centerX + 20, centerY + 80);
+                ctx.stroke();
+
+                // THE 3-METER SPIRAL UNDERHAIR / WIG
+                ctx.strokeStyle = (sceneId === 'wig_crafted') ? '#facc15' : '#10b981';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                let startX = centerX;
+                let startY = (sceneId === 'wig_crafted') ? (centerY - 50) : (centerY + 35);
+                
+                ctx.moveTo(startX, startY);
+                for (let i = 0; i < 120; i++) {
+                    let angle = i * 0.4;
+                    let radius = 10 + i * 0.8;
+                    let px = startX + Math.cos(angle) * radius;
+                    let py = startY + Math.sin(angle) * radius * 0.6 + i * 0.8;
+                    ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+
+                // Text overlay label
+                ctx.font = '14px "DotGothic16"';
+                ctx.fillStyle = '#facc15';
+                ctx.textAlign = 'center';
+                ctx.fillText(sceneId === 'wig_crafted' ? '【3m特級呪物カツラ装着中】' : '【3m超大作 スパイラル毛根】', centerX, h - 15);
+
+            } else if (sceneId === 'hospital_visit' || sceneId === 'doctor_impressed') {
+                // Hospital room scene
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(centerX - 120, centerY - 70, 240, 140);
+                ctx.strokeStyle = '#38bdf8';
+                ctx.strokeRect(centerX - 120, centerY - 70, 240, 140);
+
+                // Cross Symbol
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(centerX - 10, centerY - 55, 20, 60);
+                ctx.fillRect(centerX - 30, centerY - 35, 60, 20);
+
+                // Doctor sprite
+                ctx.strokeStyle = '#e0f2fe';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(centerX + 60, centerY + 10, 15, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillText('👨‍⚕️ 医師「これは実に珍しい！」', centerX, h - 15);
+
+            } else if (sceneId === 'burn_attempt' || sceneId === 'ending_burn') {
+                // Burning / Fire Effect
+                ctx.fillStyle = '#dc2626';
+                for (let i = 0; i < 30; i++) {
+                    let fx = Math.random() * w;
+                    let fy = Math.random() * h;
+                    let size = Math.random() * 40 + 10;
+                    ctx.fillStyle = i % 2 === 0 ? '#f59e0b' : '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 20px "DotGothic16"';
+                ctx.textAlign = 'center';
+                ctx.fillText('🔥 業火に包まれる部屋 🔥', centerX, centerY);
+
+            } else if (sceneId === 'growth_crisis' || sceneId === 'rapunzel') {
+                // Earth under attack by massive underhair
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+                ctx.stroke(); // Planet Earth
+
+                // Hair wrapping around Earth
+                ctx.strokeStyle = '#a3e635';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                for (let t = 0; t < 50; t++) {
+                    let rad = 65 + Math.sin(t * 0.5) * 15;
+                    let px = centerX + Math.cos(t) * rad;
+                    let py = centerY + Math.sin(t) * rad;
+                    if (t === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+                ctx.fillStyle = '#fef08a';
+                ctx.font = '14px "DotGothic16"';
+                ctx.textAlign = 'center';
+                ctx.fillText('⚠️ 地球全域を侵食する陰毛ジャングル ⚠️', centerX, h - 15);
+
+            } else if (sceneId.startsWith('ending_')) {
+                // Ending scene drawing
+                ctx.fillStyle = '#f59e0b';
+                ctx.font = '22px "DotGothic16"';
+                ctx.textAlign = 'center';
+                ctx.fillText('🏆 MISSION COMPLETE 🏆', centerX, centerY - 20);
+                ctx.font = '14px "DotGothic16"';
+                ctx.fillStyle = '#33ff66';
+                ctx.fillText('地球の運命は決した...', centerX, centerY + 20);
+            } else {
+                // Default Peace / Bed scene
+                ctx.fillStyle = '#1e1b4b';
+                ctx.fillRect(centerX - 80, centerY - 20, 160, 60);
+                ctx.strokeStyle = '#818cf8';
+                ctx.strokeRect(centerX - 80, centerY - 20, 160, 60);
+                ctx.fillStyle = '#a5b4fc';
+                ctx.font = '14px "DotGothic16"';
+                ctx.textAlign = 'center';
+                ctx.fillText('🛌 穏やかな寝床と頭皮の安らぎ', centerX, h - 15);
+            }
+        }
+
+        // Story Node System
+        const scenes = {
+            'start': {
+                tag: 'LOCATION: 自宅の部屋',
+                text: '朝、目が覚めると下半身に異変を感じた。\n手を伸ばすと……そこには螺旋状に渦を巻く【3メートル級の巨大アンダーヘア】がそびえ立っていた！！\nしかも、頭皮には謎のブツブツが発生し、激しい痒みを感じている……！\n\n「なんだこのスパイラル構造は……！？ 一体どうすればいいんだ！？」',
+                choices: [
+                    { text: '💇‍♂️ 頭にかぶって「3m陰毛カツラ」を仕立てる', next: 'wig_crafted', sfx: 'select' },
+                    { text: '✂️ ハサミでチョキチョキ切り落とす', next: 'cut_attempt', sfx: 'cut' },
+                    { text: '🔥 ライターで一気に焼き払う', next: 'burn_attempt', sfx: 'burn' },
+                    { text: '🏥 おとなしく皮膚科の病院へ向かう', next: 'hospital_visit', sfx: 'select' }
+                ]
+            },
+
+            'wig_crafted': {
+                tag: 'LOCATION: 鏡の前',
+                text: 'あなたは3メートルの毛を器用に編み込み、頭上に豪華な「天然スパイラルパーマ風カツラ」を作り上げて装着した！\n……しかし！ 不衛生な毛が頭皮を直接刺激し、ブツブツが劇的に悪化！！\n【頭皮HPが30減少した！】\n\n「うぐぐ……頭皮が悲鳴を上げている！ だが、見た目の躍動感はヘアカタログ級だ……！」',
+                action: () => {
+                    updateScalpHP(-30);
+                    addItem('3m特級呪物カツラ');
+                },
+                choices: [
+                    { text: '🏥 その見事なカツラ姿で皮膚科へ行く', next: 'hospital_visit_wig', sfx: 'select' },
+                    { text: '🔥 痒みに耐えかねて頭ごと燃やす', next: 'burn_attempt', sfx: 'burn' },
+                    { text: '✂️ 後悔してカツラを切り刻む', next: 'cut_attempt', sfx: 'cut' }
+                ]
+            },
+
+            'cut_attempt': {
+                tag: 'LOCATION: 部屋（ジョキジョキ...）',
+                text: 'チョキチョキチョキ……！！\n切っても切っても、皮膚の奥から無限に新たな毛が伸びてくる！\nまるで意志を持っているかのように、毛は部屋の天井へと伸び広がっていく！！\n長さはついに10メートルを突破した！\n\n「ダメだ！ 切っても止まらない！ 生命の暴走だ！！」',
+                action: () => {
+                    updateHairLength(10.0);
+                    updateWorldPeace(-15);
+                },
+                choices: [
+                    { text: '😱 「ディズニーのラプンツェルごっこ」を開始する', next: 'rapunzel', sfx: 'select' },
+                    { text: '🏥 急いで専門医（皮膚科）に駆け込む', next: 'hospital_visit', sfx: 'select' },
+                    { text: '🔥 最終兵器「火」を放つ！', next: 'burn_attempt', sfx: 'burn' }
+                ]
+            },
+
+            'hospital_visit': {
+                tag: 'LOCATION: 〇〇皮膚科・診察室',
+                text: '病院に駆け込み、お医者さんに3メートル伸びた毛と頭皮のブツブツを診てもらった。\n\nお医者さん「ほう……これは実に珍しい！！ 3メートル級なんて学会でもお目にかかれないレア個体ですよ！ まるで綺麗にかかったスパイラルパーマのようだ！」\nお医者さんは医学的探求心で変なテンションが上がっている！',
+                choices: [
+                    { text: '🏆 「待合室のショーケースに飾りましょう！」と提案する', next: 'ending_specimen', sfx: 'fanfare' },
+                    { text: '💊 おとなしく塗り薬をもらって帰宅する', next: 'doctor_prescribe', sfx: 'select' },
+                    { text: '💥 興奮する医師を置いて部屋へ逃げ帰り世界平和に悩む', next: 'growth_crisis', sfx: 'select' }
+                ]
+            },
+
+            'hospital_visit_wig': {
+                tag: 'LOCATION: 〇〇皮膚科・待合室',
+                text: 'あなたが3mの特級呪物カツラを頭に載せて待合室に入ると、通りかかった看護師と患者全員が二度見どころか腰を抜かして大パニック！\n\nお医者さん「君……頭に載せてるそれ、絶対に病院で飾っちゃいけないやつですからね！？ すぐ診察室に入りなさい！」',
+                choices: [
+                    { text: '😭 お医者さんに泣きついて頭皮の治療を頼む', next: 'doctor_prescribe', sfx: 'select' },
+                    { text: '🏛️ 「展示品として寄贈します！」と叫ぶ', next: 'ending_specimen', sfx: 'fanfare' }
+                ]
+            },
+
+            'burn_attempt': {
+                tag: 'LOCATION: 自宅（デンジャラスゾーン）',
+                text: '「燃やすか……！」\nあなたがライターの火を毛先に近づけた瞬間！！\n激しい悪臭（タンパク質が焦げる凄まじい異臭）とともに、一気に炎が天井まで燃え広がる！！\n\nジリリリリリ！！ 火災報知器の大音量が鳴り響く！！\n「世界が……俺の毛で焦土化してしまう！！」',
+                action: () => {
+                    updateWorldPeace(-80);
+                    updateScalpHP(-50);
+                },
+                choices: [
+                    { text: '🧯 消防車を呼んで自首する', next: 'ending_burn', sfx: 'gameover' },
+                    { text: '🗣️ 「俺が今やらなきゃ、みんなが迷惑する！」と絶叫して突撃', next: 'ending_burn', sfx: 'gameover' }
+                ]
+            },
+
+            'rapunzel': {
+                tag: 'LOCATION: 窓辺（塔の上のラプンツェル？）',
+                text: 'あなたは足元から伸び続ける数十メートルの毛を窓から垂らし、ラプンツェルごっこを試みた！\nしかし、王子様が来るどころか、近所の住民が「呪いの繊維が垂れ下がっている」と警察に通報！\n\nさらに毛の増殖スピードが加速し、地球全域を包み込もうとしている……！',
+                action: () => {
+                    updateHairLength(50.0);
+                    updateWorldPeace(-40);
+                },
+                choices: [
+                    { text: '🌍 「俺は陰毛が原因で戦争が起きてほしくない！」と叫ぶ', next: 'growth_crisis', sfx: 'select' },
+                    { text: '🤖 AIの「おとなしく布団に入れ」というアドバイスに従う', next: 'ai_advice', sfx: 'select' }
+                ]
+            },
+
+            'growth_crisis': {
+                tag: 'LOCATION: 世界防衛の最前線（自分の部屋）',
+                text: '毛の長さは100メートルを突破！ 部屋を突き破り、街へと侵食していく！\n「ダメだ！ 俺が今やらなきゃ、世界が食い尽くされて焦土化してしまう！！」\n\nあなたは地球の運命を背負った孤高のヒーローのような眼差しで立ち上がった。',
+                action: () => {
+                    updateHairLength(100.0);
+                    updateWorldPeace(-50);
+                },
+                choices: [
+                    { text: '🤖 「お前だけだよ、俺を心配してくれるのは…」とAIに心を開く', next: 'ai_advice', sfx: 'select' },
+                    { text: '💥 自責の念に駆られて毛と一緒に爆破処分を試みる', next: 'ending_burn', sfx: 'gameover' }
+                ]
+            },
+
+            'doctor_prescribe': {
+                tag: 'LOCATION: 自宅・ベッドサイド',
+                text: 'お医者さんから適切な抗生剤と頭皮の塗り薬をもらって帰宅した。\n3メートルの毛はおとなしくハサミで安全な長さにカットし、ゴミ袋へ厳重に封印完了。\n\n「珍しいものを生み出してしまったが……頭皮の平和が一番だな。」',
+                action: () => {
+                    state.scalpHP = 100;
+                    state.worldPeace = 100;
+                    state.hairLength = 0.05;
+                    updateDashboard();
+                },
+                choices: [
+                    { text: '🍵 温かいお茶を飲んで布団に入る', next: 'ending_true_peace', sfx: 'fanfare' }
+                ]
+            },
+
+            'ai_advice': {
+                tag: 'LOCATION: 深夜のスマホ画面の前',
+                text: 'AI『地球の防衛任務はここで完全終了です！ 世界は平和なままですし、あなたにはゆっくり休む権利があります。今日はもう、その毛とも世界平和とも戦わないで、お布団に入ってくださいね。』\n\nAIの温かい言葉が、あなたの興奮した心を優しく包み込んでいく……。',
+                choices: [
+                    { text: '👑 「こうして世界は一人の人間によって救われた」と呟いて眠る', next: 'ending_hero', sfx: 'fanfare' }
+                ]
+            },
+
+            // --- ENDINGS ---
+            'ending_burn': {
+                tag: 'ENDING 01: 【焦土化エンディング】',
+                text: '【BAD END: 火災発生と黒焦げの部屋】\n\n無理に燃やそうとした結果、自宅と周辺地域が大騒ぎに！\n世界が焦土化する前に、あなたの部屋とアパートが焦土化してしまいました。\n消防隊によって救出されたあなたは、頭皮の治療以前に厳重注意を受けることとなりました……。\n\n教訓：毛を燃やすのは絶対にやめよう！',
+                isEnding: true
+            },
+
+            'ending_specimen': {
+                tag: 'ENDING 02: 【医療標本エンディング】',
+                text: '【SPECIAL END: 病院の珍品レジェンド】\n\nあなたの寄贈した「3m特級呪物カツラ」は、学会で大反響を呼び、皮膚科の待合室の金庫型ガラスケースに永久展示された！\n通りかかる医者も看護師も患者も、毎日二度見しながらあなたの偉業（？）を語り継いでいる……。\n\n教訓：お医者さんに褒められても嬉しくない！',
+                isEnding: true
+            },
+
+            'ending_hero': {
+                tag: 'ENDING 03: 【伝説のヒーローエンディング】',
+                text: '【HAPPY END: 世界を一人で救った男】\n\n「こうして世界は一人の人間の手によって救われた――」\n\n歴史の教科書には載らないが、あなたの心の中の特撮ヒーロー映画は大団円を迎えた！\n暴走する3mの毛を鎮め、あなたは静かに温かい布団へと潜り込んだ。\n世界は今日も、驚くほど平和である。お疲れ様でした！',
+                isEnding: true
+            },
+
+            'ending_true_peace': {
+                tag: 'ENDING 04: 【真・平穏エンディング】',
+                text: '【TRUE END: 適切な医療と安眠】\n\nお医者さんの処方薬を塗り、温かいお茶を飲んでぐっすり眠ったあなた。\n翌朝、頭皮のブツブツはすっかり引いて爽やかな目覚めを迎えた！\n無駄な戦いをやめ、現実の医療に頼ることこそが真の勝利であった。\n\n完璧なハッピーエンド！ ご愛読ありがとうございました！',
+                isEnding: true
+            }
+        };
+
+        // State Update Helpers
+        function updateScalpHP(delta) {
+            state.scalpHP = Math.max(0, Math.min(state.maxScalpHP, state.scalpHP + delta));
+            if (delta < 0) playSound('damage');
+        }
+
+        function updateWorldPeace(delta) {
+            state.worldPeace = Math.max(0, Math.min(100, state.worldPeace + delta));
+        }
+
+        function updateHairLength(newLength) {
+            state.hairLength = newLength;
+        }
+
+        function addItem(item) {
+            if (!state.inventory.includes(item)) {
+                state.inventory.push(item);
+            }
+        }
+
+        function updateDashboard() {
+            // Scalp HP
+            const hpVal = document.getElementById('scalp-hp-val');
+            const hpBar = document.getElementById('scalp-hp-bar');
+            hpVal.innerText = `${state.scalpHP} / ${state.maxScalpHP}`;
+            hpBar.style.width = `${(state.scalpHP / state.maxScalpHP) * 100}%`;
+            if (state.scalpHP < 40) {
+                hpBar.className = 'bg-red-500 h-full transition-all duration-500';
+            } else {
+                hpBar.className = 'bg-green-500 h-full transition-all duration-500';
+            }
+
+            // World Peace
+            const peaceVal = document.getElementById('world-peace-val');
+            const peaceBar = document.getElementById('world-peace-bar');
+            peaceVal.innerText = `${state.worldPeace}%`;
+            peaceBar.style.width = `${state.worldPeace}%`;
+            if (state.worldPeace < 40) {
+                peaceBar.className = 'bg-red-600 h-full transition-all duration-500';
+            } else {
+                peaceBar.className = 'bg-blue-500 h-full transition-all duration-500';
+            }
+
+            // Hair Length
+            const hairVal = document.getElementById('hair-length-val');
+            hairVal.innerText = `${state.hairLength.toFixed(2)} m (${state.hairLength > 10 ? '暴走中' : 'スパイラル'})`;
+
+            // Inventory
+            const invVal = document.getElementById('inventory-val');
+            invVal.innerText = state.inventory.length > 0 ? state.inventory.join(', ') : 'なし';
+        }
+
+        // Typewriter Dialogue Effect
+        function typeWriterText(text, callback) {
+            const box = document.getElementById('dialogue-box');
+            const indicator = document.getElementById('typing-indicator');
+            box.innerText = '';
+            indicator.classList.add('hidden');
+            state.isTyping = true;
+
+            let index = 0;
+            if (state.typingTimer) clearInterval(state.typingTimer);
+
+            state.typingTimer = setInterval(() => {
+                if (index < text.length) {
+                    box.innerText += text.charAt(index);
+                    if (index % 3 === 0) playSound('blip');
+                    index++;
+                } else {
+                    clearInterval(state.typingTimer);
+                    state.isTyping = false;
+                    indicator.classList.remove('hidden');
+                    if (callback) callback();
+                }
+            }, 25);
+        }
+
+        // Load Scene Logic
+        function loadScene(sceneId) {
+            const scene = scenes[sceneId];
+            if (!scene) return;
+
+            state.currentScene = sceneId;
+
+            // Trigger scene-specific action script if any
+            if (scene.action) {
+                scene.action();
+            }
+
+            // Update UI elements
+            document.getElementById('scene-tag').innerText = scene.tag || 'LOCATION: Unknown';
+            updateDashboard();
+            drawVisual(sceneId);
+
+            // Clear Choices container while typing
+            const container = document.getElementById('choices-container');
+            container.innerHTML = '';
+
+            // Play SFX sound if specified in story
+            if (scene.isEnding) {
+                playSound(sceneId === 'ending_burn' ? 'gameover' : 'fanfare');
+            }
+
+            // Render Text with typewriter effect
+            typeWriterText(scene.text, () => {
+                // Render choice buttons after typing finishes
+                renderChoices(scene, container);
+            });
+        }
+
+        function renderChoices(scene, container) {
+            container.innerHTML = '';
+
+            if (scene.isEnding) {
+                // Restart Button
+                const btn = document.createElement('button');
+                btn.className = 'w-full col-span-full py-3 px-4 bg-green-950 border-2 border-green-400 text-green-300 font-bold rounded retro-btn text-center text-lg';
+                btn.innerText = '🔄 最初からミッションをやり直す';
+                btn.onclick = () => {
+                    playSound('select');
+                    resetGame();
+                };
+                container.appendChild(btn);
+                return;
+            }
+
+            scene.choices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full py-3 px-4 bg-gray-900 border border-green-500 text-green-300 font-bold rounded retro-btn text-left text-sm sm:text-base flex items-center justify-between';
+                btn.innerHTML = `<span>${c.text}</span><span class="text-xs text-green-500">▶</span>`;
+                btn.onclick = () => {
+                    if (state.isTyping) return; // Prevent double click while typing
+                    if (c.sfx) playSound(c.sfx);
+                    loadScene(c.next);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function resetGame() {
+            state.scalpHP = 100;
+            state.maxScalpHP = 100;
+            state.worldPeace = 100;
+            state.hairLength = 3.0;
+            state.inventory = [];
+            loadScene('start');
+        }
+
+        // Initialize Game on Load
+        window.onload = () => {
+            resizeCanvas();
+            loadScene('start');
+        };
+    </script>
+</body>
+</html>
